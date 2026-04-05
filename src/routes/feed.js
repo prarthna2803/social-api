@@ -3,7 +3,6 @@ const router = express.Router();
 const pool = require('../config/db');
 const auth = require('../middleware/auth');
 
-// GET /feed — get posts from people you follow
 router.get('/', auth, async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -19,17 +18,14 @@ router.get('/', auth, async (req, res, next) => {
        WHERE posts.user_id IN (
          SELECT following_id FROM follows WHERE follower_id = $1
        )
+       AND posts.deleted_at IS NULL
        GROUP BY posts.id, users.username
        ORDER BY posts.created_at DESC
        LIMIT $2 OFFSET $3`,
       [req.user.id, limit, offset]
     );
 
-    res.json({
-      page,
-      limit,
-      posts: result.rows,
-    });
+    res.json({ page, limit, posts: result.rows });
   } catch (err) {
     next(err);
   }
